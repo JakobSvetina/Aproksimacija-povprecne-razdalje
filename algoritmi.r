@@ -9,15 +9,7 @@ library(phangorn)
 #Izhod: pričakovana vrednost naključne projekcije
 
 F <- function(d) {
-  if ((d %% 2) == 0) {
-    return((dfactorial(d-2) * 2)/(dfactorial(d-1) * pi))
-  }
-  if ((d %% 2) == 1) {
-    return(dfactorial(d-2)/dfactorial(d-1))
-  }
-  else {
-    print("Število ni celo")
-  }
+  dfactorial(d-2) / dfactorial(d-1) * sqrt(2/pi)
 }
 
 #Algoritem za naključen vektor
@@ -45,29 +37,18 @@ Nakljucen_vektor <- function() {
 #Izhod: približek povprečne razdalje med pari točk v S
 
 Priblizek_povprecne_razdalje <- function(S, e=0.1) {
-  n <- length(S[1,])
-  d <- length(S[,1])
+  d <- ncol(S)
+  n <- nrow(S)
   f <- F(d)
   m <- ceiling(1/e^2)
   skupna_razdalja <- 0
 #  print(list(n,d,f,m))
   for (i in 1:m) {
-    razdalja <- 0
     r <- Nakljucen_vektor()
-    S_r <- c()
-    for (j in 1: n) {
-      S_r <- c(S_r, r%*%S[j,])
-    }
-    S_r <- sort(S_r)
-    for (k in 1:n) {
-      razdalja <- razdalja + abs(S_r[1] - S_r[k])
-    }
-    for (l in 1:(n - 1)) {
-      razdalja <- razdalja + (2 * l - n) * (S_r[l + 1] - S_r[l])
-    }
-    skupna_razdalja <- skupna_razdalja + razdalja
+    S_r <- sort(S %*% r)
+    skupna_razdalja <- skupna_razdalja + sum(S_r * seq(1-n, n-1, 2))
   }
-  return(skupna_razdalja/(f*n^2*m))
+  return(2*skupna_razdalja/(f*n^2*m))
 }
 
 #Algoritem za izračun točne povprečne razdalje med točkami
@@ -82,7 +63,7 @@ Tocna_povprecna_razdalja <- function(S) {
   n <- dim(S)[1]
   for (i in 1:(n-1)){
     for (j in (i+1):n){
-      s <- s + sqrt((S[i,1]-S[j,1])^2 + (S[i,2]-S[j,2])^2)
+      s <- s + sqrt(sum((S[i,] - S[j,])^2))
     }
   }
   povprecna_razdalja <- 2*s/(n^2)
@@ -93,11 +74,8 @@ Tocna_povprecna_razdalja <- function(S) {
 
 Nakljucne_tocke <- function() {
   stevilo_tock <- sample(1:100, 1)
-  S <- matrix(, nrow = stevilo_tock, ncol = 2)
-  for (i in 1:stevilo_tock) {
-    S[i, 1] <- runif(1, -100.0, 100.0)
-    S[i, 2] <- runif(1, -100.0, 100.0)
-  }
+  S <- matrix(runif(2*stevilo_tock, -100.0, 100.0),
+              nrow=stevilo_tock, ncol=2)
   return(S)
 }
 
