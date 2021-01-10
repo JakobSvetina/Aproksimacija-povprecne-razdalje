@@ -1,0 +1,320 @@
+\documentclass[12pt,a4paper]{amsart}
+\usepackage[table]{xcolor}
+\usepackage[slovene]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{tikz}
+\usetikzlibrary{decorations.pathreplacing}
+\usepackage{chronosys}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{url}
+\usepackage{enumitem}
+\usepackage{multirow}
+\usepackage[justification=centering]{caption}
+\usepackage{amsmath}
+\usepackage{algorithm}
+\usepackage[noend]{algpseudocode}
+\usepackage{mathtools}
+\usepackage{listings}
+\usepackage{algorithmicx}
+\usepackage{caption}
+
+\usepackage{algpseudocode}
+
+\textwidth 15cm
+\textheight 24cm
+\oddsidemargin.5cm
+\evensidemargin.5cm
+\topmargin-5mm
+\addtolength{\footskip}{10pt}
+\pagestyle{plain}
+\overfullrule=15pt 
+
+
+% ukazi za matematicna okolja
+\theoremstyle{definition} % tekst napisan pokoncno
+\newtheorem{definicija}{Definicija}[section]
+\newtheorem{primer}[definicija]{Primer}
+\newtheorem{opomba}[definicija]{Opomba}
+\renewcommand\endprimer{\hfill$\diamondsuit$}
+\theoremstyle{plain} % tekst napisan posevno
+\newtheorem{lema}[definicija]{Lema}
+\newtheorem{izrek}[definicija]{Izrek}
+\newtheorem{trditev}[definicija]{Trditev}
+\newtheorem{posledica}[definicija]{Posledica}
+% za stevilske mnozice uporabi naslednje simbole
+\newcommand{\R}{\mathbb R}
+\newcommand{\N}{\mathbb N}
+\newcommand{\Z}{\mathbb Z}
+\newcommand{\C}{\mathbb C}
+\newcommand{\Q}{\mathbb Q}
+
+% naslednje ukaze ustrezno popravi
+\newcommand{\program}{Finančna matematika} 
+\newcommand{\imeavtorja}{Enja Erker, Jakob Svetina} 
+\newcommand{\imementorja}{prof.~dr.~Sergio Cabello, asist.~dr.~Janoš Vidali} 
+\newcommand{\naslovdela}{Aproksimacija povprečne razdalje med točkami v dvodimenzionalnem evklidskem prostoru}
+\newcommand{\letnica}{10. 1. 2021}
+
+\DeclarePairedDelimiter\ceil{\lceil}{\rceil}
+
+
+\begin{document}
+
+
+
+\thispagestyle{empty}
+\noindent{\large
+UNIVERZA V LJUBLJANI\\[1mm]
+FAKULTETA ZA MATEMATIKO IN FIZIKO\\[5mm]
+\program\ -- 1.~stopnja}
+\vfill
+\begin{center}{\large
+\imeavtorja\\[2mm]
+{\bf \naslovdela}\\[10mm]
+Poročilo o projektu pri predmetu Finančni praktikum\\[1cm]
+Mentorja: \imementorja}
+\end{center}
+\vfill
+\noindent{\large
+Ljubljana, \letnica}
+\pagebreak
+
+
+\thispagestyle{empty}
+\tableofcontents
+\pagebreak
+
+
+\thispagestyle{empty}
+\begin{center}
+{\bf \naslovdela}\\[3mm]
+{\sc Povzetek}
+\end{center}
+Osrednji proučevani problem projekta pri predmetu Finančni praktikum je aproksimacija povprečne razdalje med točkami v dvodimenzionalnem evklidskem prostoru. Teoretičen del naloge temelji na konstrukciji algoritmov. V programu R sva napisala algoritem za omenjeno aproksimacijo, poleg tega sva napisala še časovno bolj zahteven algoritem, ki računa točno povprečno razdaljo med točkami. Nato sva v programu R izvedla več poskusov, s katerimi sva preverila natančnost aproksimacije. Ključni ugotovitvi eksperimentalnega dela sta dve. Prva, da se z večanjem števila točk zmanjšuje število potrebnih ponovitev izvedbe algoritma in druga, da se z večanjem natančnosti povečuje število izvedenih ponovitev. Glede na rezultate sva zaključila, da je skonstruirani algoritem časovno dokaj učinkovit. 
+\vfill
+
+\makeatletter
+\def\BState{\State\hskip-\ALG@thistlm}
+\makeatother
+\captionsetup[algorithm]{labelformat=empty}
+
+\vfill\noindent
+
+{\bf Klju"cne besede:} povprečna razdalja med točkami, implementacija objekta, \\ naključen enotski vektor, naključna projekcija  \\[1mm]  
+\pagebreak
+
+\overfullrule=0pt
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Uvod}
+
+Osrednji proučevani problem projekta pri predmetu Finančni praktikum je aproksimacija povprečne razdalje med točkami v dvodimenzionalnem evklidskem prostoru. Namen naloge je čim bolj ekonomično, s čim manjšo časovno zahtevnostjo, oceniti približek povprečne razdalje med vsemi točkami dane množice v ravnini. Najpreprostejši pristop k problemu je postopno seštevanje vseh možnih razdalj med danimi točkami, vendar je ta metoda časovno zelo potratna. 
+
+Z namenom poiskati metodo, katere časovna zahtevnost bi bila manjša od navedene, je bilo v preteklosti objavljenih kar nekaj študij. Ključno literaturo, na kateri temelji teoretično ozadje najine naloge, sestavljata dve deli. Gre za članek avtorjev K. Barhum, O. Goldreich in A. Shraibman z naslovom 'On Approximating the Average Distance Between Points' [1] in diplomsko delo avtorja S. Kolar Celarc 'Aproksimacijski algoritmi za računanje povprečne razdalje med točkami' [2]. Pristop, ki ga bova predstavila in implementirala v tem projektu je t. i. 'implementacija objekta' [1] oz. 'naključna projekcija' [2]. 
+
+\section{Opis problema}
+
+Izhodišče problema aproksimacije povprečne razdalje med točkami v dvodimenzionalnem evklidskem prostoru je ravnina ($\R^2$), v kateri leži množica $n$ točk. V nadaljevanju bo ta množica označena s $S$, velja $S = \{ P_{1}, P_{2}, ...  P_{n} \} \subset \R^2$. Povprečna razdalja med točkami v $S$ je definirana kot [2] $$ D(S) = \frac{1}{n^2} \sum_{(P,Q) \in S \times S}^{} d(P,Q) ,$$ kjer je $d(P,Q)$ razdalja med točkama $P$ in $Q$.
+
+Izbran pristop  'implementacije objekta' oz. 'naključne projekcije' je osnovan na konceptu prevedbe problema iz dvodimenzionalnega na enodimenzionalnega. V primeru ene dimenzije je namreč mogoče problem rešiti zgolj v času $O(n \cdot log(n))$. Problem v dveh dimenzijah prevedemo na eno dimenzijo, tako da točke iz ravnine projiciramo na naključno premico z naključnim smernim vektorjem, ki gre skozi izhodišče. Nato seštejemo ustrezne dolžine med projekcijami točk, ki so sedaj kolinearne. Pričakovana vrednost povprečne razdalje med točkami, ki jih projiciramo na naključno premico, se razlikuje od dejanske povprečne razdalje med točkami za konstantni faktor in je neodvisna od izbire premice. Izkaže se, da lahko na premici vsoto vseh razdalj med točkami izračunamo bistveno hitreje kot v splošnem prostoru [2]. 
+
+V projektu bova tako zasledovala dvojni cilj. Prvič, zasnovati natančen algoritem, ki oceni približek povprečne razdalje med danimi točkami v ravnini v čim krajšem času (skoraj linearnem času števila točk). Drugič, odgovoriti na ključno vprašanje glede napake in sicer, koliko eksperimentalnih ponovitev je treba narediti, da bo napaka čim manjša (npr. 5 \%, 2 \%).
+
+\section{Programsko okolje in implementacija}
+
+Za implementacijo predstavljenega problema sva uporabila program R. Ta program sva izbrala, ker je od nama znanih programov oz. programskih jezikov najbolj primeren za izvedbo naloge. Najprej sva napisala dva krajša oz. pomožna algoritma predstavljena v nadaljevanju (Algoritma 1 in 2), ki sva ju nato združila v osrednji algoritem, ki izračuna približek povprečne razdalje med točkami v ravnini (Algoritem 3). V zaključku tega poglavja je predstavljen tudi postopek za izračun točne povprečne razdalje med točkami (Algoritem 4), ki služi za primerjavo. Vsi algoritmi v nadaljevanju so predstavljeni s psevdokodo.
+
+Prvi izmed skonstruiranih algoritmov je funkcija $F$ (Algoritem 1), ki ima za vhodni podatek dimenzijo prostora $d$, v katerem se nahajajo točke. Vrne pa pričakovano vrednost vsote absolutnih vrednosti produktov vektorja $v$ z vektorji iz naključne ortonormirane baze $\mathbb{R}^d$. V specifičnem primeru te naloge, je dimenzija prostora vedno enaka $2$. Vrednost $F(d)$ sva zato izračunala le enkrat. Časovna zahtevnost tega algoritma je v splošnem enaka $O(d)$ oz. $O(2)$.  
+
+\let\oldnl\nl
+\newcommand{\nonl}{\renewcommand{\nl}{\let\nl\oldnl}}
+
+\begin{algorithm}[H]
+\caption{\textbf{Algoritem 1} Funkcija F}\label{f}
+\begin{algorithmic}[1]
+\Statex \textbf{Vhod:} \text{$d$} 
+\Statex \textbf{Izhod:} \text{pričakovana vrednost vsote abosolutnih vrednosti produktov vektorja $v$} 
+  \hspace{13mm} \text{z vektorji iz naključne ortonormirane baze $\mathbb{R}^d$}
+\Function{F}{\textit{d}}
+\State  $ \frac{(d-2)!!}{(d-1)!!} \cdot \sqrt{\frac{2}{\pi}} $ \\
+$\textbf{end function}$
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+
+Postopek za pridobivanje naključnih enakomerno porazdeljenih enotskih vektorjev (Algoritem 2) brez vhodnih podatkov oz. argumentov zgenerira dve naključni neodvisni slučajni spremenljivki $U$ in $V$ z enakomerno porazdelitvijo $U[0,1]$. Ti slučajni spremenljivki nato z Box-Mullerjevo metodo pretvori v standardizirano normalni slučajni spremenljivki [2]. Izhodni podatek je tako naključen enotski vektor. 
+
+\begin{algorithm}[H]
+\caption{\textbf{Algoritem 2} Generiranje naključnega vektorja}\label{naključen vektor}
+\begin{algorithmic}[1]
+\Statex\textbf{Vhod:} \text{--}
+\Statex\textbf{Izhod:} \text{naključen enotski vektor}
+\Function{NaključenVektor}{\hspace{1mm}}
+\State $\textit{U} \gets \textit{runif$(1)$}$
+\State $\textit{V} \gets \textit{runif$(1)$}$
+\State $\textit{M} \gets \textit{$\sqrt{-2log(U)} cos(2 \pi V)$}$
+\State $\textit{N} \gets \textit{$\sqrt{-2log(U)}  sin(2 \pi V)$}$
+\State $\textbf{return} \hspace{2mm} \frac{c(M,N)}{norm(c(M,N), type="2")}$ \\
+$\textbf{end function}$
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+
+Osrednji algoritem za izračun približka povprečne razdalje med točkami (Algoritem 3) ima dva vhodna podatka: seznam točk $S$ in zahtevano natačnost $\varepsilon$. Prvi del algoritma predstavlja definiranje posameznih vrednosti, ki jih uporabimo v nadaljevanju. For zanka, ki se ponovi tolikokrat, da je natačnost $\varepsilon$ ustezna, je osrednji del algoritma. Prvi korak znotraj zanke zgenerira naključen vektor z uporabo pomožne funkcije (Algoritem 2). Naslednji korak predstavlja izračun skalarnih produktov med seznamom točk $S$ in zgeneriranim vektorjem. Skalarne produkte agloritem sortira, funkcija \textproc{Sort} je definirana kot običajno urejanje seznama. Sortiranje je časovno najzahtevnejši del tega algoritma, saj traja $O(n \cdot log(n))$. V kolikor je dimenzija $d$ dovolj velika v primerjavi z $n$, prevlada računanje skalarnih produktov  $\langle r, S[i]\rangle$, ki traja $O(dn)$ oz. $O(2n)$ [2]. Sortiranju sledi računanje razdalj. Pri vsaki ponovitvi 'for' zanke se vrednosti \textit{skupna\_razdalja} prišteje vsota definirana v deseti vrstici algoritma. Izhodni podatek predstavljenega algoritma je približek povprečne razdalje med pari točk v $S$, definiran kot kvocient vrednosti $2 \cdot$\textit{skupna\_razdalja} in produkta $fn^2m$ [2]. Časovna zahtevnost osrednjega algoritma znaša $O(\frac{(d+log(n))n}{\varepsilon^2})$ oz. $O(\frac{(2+log(n))n}{\varepsilon^2})$.
+
+\begin{algorithm}[H]
+\caption{\textbf{Algoritem 3} Izračun približka povprečne razdalje med točkami}\label{priblizek}
+\begin{algorithmic}[1]
+\Statex\textbf{Vhod:}  \text{seznam točk $S$, zahtevana natančnost $\varepsilon$}
+\Statex\textbf{Izhod:} \text{približek povprečne razdalje med pari točk v $S$}
+\Function{PribližekPovprečneRazdalje}{\textit{S},$\varepsilon$}
+\State $\textit{n} \gets \textit{nrow(S)}$
+\State $\textit{d} \gets \textit{ncol(S)}$
+\State $\textit{f} \gets \text{F(\textit{d})}$
+\State $\textit{m} \gets \ceil*{\frac{1}{\varepsilon^2}}$
+\State $\textit{skupna\_razdalja} \gets 0$
+\State \textbf{for} $\textit{i} \gets 1$ \textbf{to} $\textit{m}$
+	\State \hspace{6mm} $\textit{r} \gets \textproc{NaključenVektor}$
+	\State\hspace{6mm} $S_{r} \gets \textproc{Sort} \langle S, r\rangle$ 
+	\State \hspace{6mm}$\textit{skupna\_razdalja} \gets \textit{skupna\_razdalja} + \sum\limits_{n=1}^{dim(S_r)} S_{r} \cdot \textit{seq}(1-n,n-1,2)$ 
+\State $\textbf{end for}$
+\State \textbf{return} $\frac{2 \cdot \textit{skupna\_razdalja}}{fn^2m}$ \\
+$\textbf{end function}$
+\EndFunction 
+\end{algorithmic}
+\end{algorithm}
+
+Napisala sva tudi časovno bolj zahteven algoritem, ki izračuna točno povprečno razdaljo med točkami (Algoritem 4). Vhodni podatek predstavlja tabela točk oz. matrika dimenzije $n \times 2$. Algoritem za vsaki dve točki po standardni formuli izračuna razdaljo med točkama v ravnini ob upoštevanju simetričnosti ($d(P,Q) = d(Q,P)$), dobljene vrednosti sproti sešteva. Predstavljena direktna metoda ima časovno zahtevnost $O(n^2)$. 
+
+\begin{algorithm}[H]
+\caption{\textbf{Algoritem 4} Izračun točne povprečne razdalje med točkami}\label{tocna}
+\begin{algorithmic}[1]
+\Statex\textbf{Vhod:} \text{seznam točk $S$ dimenzije $n \times 2$}
+\Statex\textbf{Izhod:} \text{povprečna razdalja med pari točk v $S$}
+\Function{TočnaPovprečnaRazdalja}{\textit{S}}
+\State $\textit{s} \gets 0$
+\State $n \gets \textit{nrow(S)}$
+\State \textbf{for} $\textit{i} \gets 1$ \textbf{to} $\textit{n} - 1$
+	\State \hspace{6mm} \textbf{for} $\textit{j} \gets i +1 $ \textbf{to} $\textit{n}$
+		\State \hspace{12mm} $\textit{s} \gets \textit{s} + \sqrt{ \sum\limits_{j=i+1}^{n} \sum\limits_{i=1}^{n-1} (S[i,]+S[j,])^2}$
+ \State \hspace{6mm}	 \textbf{end for}
+
+\State $\textbf{end for}$
+\State $\textit{povprečna\_razdalja} \gets \frac{2s}{n^2}$
+\State \textbf{return} $\textit{povprečna\_razdalja}$ \\
+$\textbf{end function}$
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+
+\section{Generiranje podatkov}
+
+Generiranja podatkov (Algoritem 5) sva se lotila tako, da sva najprej naključno število točk izbrala sama, to označuje $a$. Algoritem spodaj ustvari matriko primerne velikosti glede na število točk. Koordinati vsake točke sva določila naključno, pri čemer sva generirala $2 \cdot a$ naključnih števil iz intervala $[b, c]$, ki sva jih nato uredila v $a$ parov. Vsak par tako predstavlja točko. Predstavljeni algoritem glede na izbrano število točk naključno zgenerira le-te v omejeni ravnini.
+
+\begin{algorithm}[H]
+\caption{\textbf{Algoritem 5} Generiranje naključnih točk}\label{generiranje}
+\begin{algorithmic}[1]
+\Statex\textbf{Vhod:} \text{želeno število naključnih točk $a$, meji osi v ravnini $b$ in $c$}
+\Statex\textbf{Izhod:} \text{seznam točk $S$ dimenzije $n \times 2$}
+\Function{NaključneTočke}{\textit{a, b, c}}
+\State $S \gets \textit{matrix}\hspace{1mm}(\textit{runif} \hspace{1mm} (2 \cdot \textit{a}, \textit{b}, \textit{c}), \textit{nrow} = \textit{a}, \textit{ncol} = 2)$
+\State \textbf{return} $\textit{S}$ \\
+$\textbf{end function}$
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+
+\section{Eksperimenti}
+
+Da bi odgovorila na naslednji dve raziskovalni vprašanji:
+\begin{itemize}
+\item{kako se spreminja število korakov ob spremembi števila točk in}
+\item{kako se spreminja število korakov ob spremembi natančnosti,}
+\end{itemize}
+sva v drugem delu naloge izvedla dva eksperimenta. Opazujemo število korakov osrednjega algoritma (Algoritem 3). Za prvi preizkus sva za število točk izbrala vrednosti 5, 15, 50 in 100 točk. Za drugi preizkus pa sva izbrala natančnosti 5 \%, 3 \%, 2 \% ter 1 \%.
+
+Algoritmom, ki sva jih skonstruirala v poglavjih 3 in 4 sva dodala še dodatni funkciji predstavljeni v nadaljevanju, s katerima sva preverila natančnost aproksimacije. S prvo funkcijo (Algoritem 6) ugotovimo, koliko ponovitev je potrebnih za želeno natančnost. Pri tem zanka 'while' upošteva želeno natančnost in zaustavitveni pogoj. Zaustavitveni pogoj predstavlja omejenost števca z namenom, da ne bi prišlo do 'ponavljanja v neskončnost' oz. t. i. 'ciklanja'. 
+
+\begin{algorithm}[H]
+\caption{\textbf{Algoritem 6} Test natančnosti}\label{natančnost}
+\begin{algorithmic}[1]
+\Statex\textbf{Vhod:} \text{seznam točk $S$ dimenzije $n \times 2$, napaka $\varepsilon$}
+\Statex\textbf{Izhod:} \text{število ponovitev}
+\Function{TestNatančnosti}{\textit{S}, $\varepsilon$}
+\State \textit{točna} $\gets$ \textit{as.numeric}\textproc{(TočnaPovprečnaRazdalja}(\textit{S})) 
+\State \textit{približek} $\gets 0$ 
+\State \textit{približek2} $\gets 0$ 
+\State \textit{števec} $\gets 0$ 
+\State \textbf{while} {$|\frac{\textit{približek}}{\textit{točna}} - 1| > \textit{napaka}$ \textbf{and} \textit{števec} $< 50$}
+	\State \hspace{6mm} \textit{števec} $\gets$ \textit{števec} $+ 1$ 
+	\State \hspace{6mm} \textit{približek2} $\gets$ \textit{približek2} + \textproc{PribližekPovprečneRazdalje}(S) 
+	\State \hspace{6mm} \textit{približek} $\gets \frac{\textit{približek2}}{\textit{števec}}$ 
+\State \textbf{end while}
+\State \textbf{return} $\textit{števec}$ \\
+$\textbf{end function}$
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+
+Druga dodatna funkcija (Algoritem 7) vrne vektor s številom ponovitev postopka v 100 različnih ponovitvah testa natančnosti.
+
+\begin{algorithm}[H]
+\caption{\textbf{Algoritem 7} Test števila potrebnih ponovitev}\label{ponovitve}
+\begin{algorithmic}[1]
+\Statex\textbf{Vhod:} \text{seznam točk $S$ dimenzije $n \times 2$, napaka $\varepsilon$, dolžina $d$}
+\Statex\textbf{Izhod:} \text{vektor števila ponovitev v 100 ponovitvah testa natančnosti}
+\Function{TestŠtevilaPotrebnihPonovitev}{\textit{S}, $\varepsilon$, $d$}
+\State \textit{števci} $\gets$ \textit{c}(\hspace{1mm})
+\State \textbf{for} {$\textit{i} \gets 1$ \textbf{to} \textit{dolžina}}
+		\State \hspace{6mm} $\textit{števci}[i] \gets \textproc{TestNatančnosti}(\textit{S,$\varepsilon$})$
+\State $\textbf{end for}$
+\State \textbf{return} $\textit{števci}$ \\
+$\textbf{end function}$
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+
+
+\section{Rezultati}
+
+Ključna ugotovitev prvega izvedenega eksperimenta je, da se z večanjem števila točk zmanjšuje število potrebnih korakov izvedbe osrednjega algoritma za izračun približka povprečne razdalje med točkami. Dobljeni rezultat je pričakovan, saj je v primeru majhnega števila točk napaka večja in se mora postopek zato izvesti večkrat, da doseže želeno natančnost. Natančnost, s katero sva izvedla spodaj predstavljene eksperimente (Spreminjanje števila točk), je bila 2 \%. Vizualizacija rezultatov projektnega dela je prav tako kot algoritimi izvedena v programu R.
+\vspace{3mm}
+\begin{figure}[H]
+\includegraphics[width=0.8\textwidth]{st_tock}
+ \caption*{Grafi 1: Spreminjanje števila točk.}
+\centering
+\end{figure}
+
+Rezultat drugega izvedenega eksperimenta je, da se z večjo natančnostjo povečuje število potrebnih korakov izvedbe osrednjega algoritma za izračun približka povprečne razdalje med točkami. Dobljeni rezultat je podobno kot prvi pričakovan, saj je v primeru nižje natančnosti dovolj manj ponovitev postopka. V kolikor pa je želena natančnost visoka, je število ponovitev temu primerno večje. Za ta eksperiment sva število točk nastavila na 10. Rezultati so spodaj predstavljeni še grafično  (Spreminjanje natačnosti).
+
+\vspace{3mm}
+\begin{figure}[H]
+\includegraphics[width=0.8\textwidth]{natancnost}
+ \caption*{Grafi 2: Spreminjanje natančnosti.}
+\centering
+\end{figure}
+
+\section{Zaključek}
+
+V nalogi sva proučevala problem aproksimacije povprečne razdalje med točkami v dvodimenzionalnem evklidskem prostoru. Namen naloge je bil čim bolj ekonomično, s čim manjšo časovno zahtevnostjo, oceniti približek povprečne razdalje med vsemi točkami dane množice v ravnini. Teoretični del naloge zaobjema več algoritmov s poudarkom na osrednjem algoritmu, ki aproksimira povprečno razdaljo med točkami v ravnini (Algoritem 3) s časovno zahtevnostjo $O(\frac{(2+log(n))n}{\varepsilon^2})$. Praktičen del naloge pa temelji na dveh izvedenih eksperimentih. Ključni ugotovitvi eksperimentalnega dela sta dve. Prva, da se z večanjem števila točk zmanjšuje število potrebnih korakov izvedbe algoritma in druga, da se z večanjem natančnosti povečuje število izvedenih korakov. Glede na rezultate lahko zaključiva, da je v splošnem napaka algoritma relativno majhna. 
+
+\vfill
+
+\newpage
+\begin{thebibliography}{99}
+
+\bibitem{vec-avtorjev}
+K.~Barhum, O.~Goldreich in A.~Shraibman \emph{On Approximating the Average Distance Between Points}, Lecture Notes in Computer Science (2007) 296--310.
+
+\bibitem{referenca-clanek}
+S.~Kolar Celarc, \emph{Aproksimacijski algoritmi za računanje povprečne razdalje med točkami}, Delo diplomskega seminarja (2019) 4--17.
+
+\end{thebibliography}
+
+\end{document}
